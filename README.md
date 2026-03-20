@@ -1,7 +1,16 @@
-# 📊 PayrollPro — Salary Payroll Management System
-### Full-Stack HR Dashboard | Indian Statutory Compliance | Professional Analytics
+<div align="center">
+  <img src="https://img.shields.io/badge/React-18.0-blue?style=for-the-badge&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/Node.js-18.x-green?style=for-the-badge&logo=nodedotjs" alt="Node.js" />
+  <img src="https://img.shields.io/badge/MySQL-8.0-orange?style=for-the-badge&logo=mysql" alt="MySQL" />
+  <img src="https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css" alt="TailwindCSS" />
+  <h1>📊 PayrollPro</h1>
+  <p><b>Enterprise Salary & Payroll Management System</b></p>
+  <p><i>Full-Stack HR Dashboard | Indian Statutory Compliance | Professional Analytics</i></p>
+</div>
 
-PayrollPro is a comprehensive Salary Payroll Management System designed for Indian enterprises. Built with a modern tech stack, it handles everything from employee registration and attendance to complex salary calculations, leave management, and professional PDF payslip generation.
+---
+
+PayrollPro is a comprehensive Salary Payroll Management System designed for modern enterprises. Built with a pristine React/Node tech stack, it handles everything from employee registration and role-based attendance to complex salary calculations, leave management, and professional PDF payslip generation.
 
 ---
 
