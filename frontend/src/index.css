@@ -1,0 +1,114 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@theme {
+  --color-primary: #1677FF;
+  --color-primary-hover: #0958D9;
+  --color-primary-focus: #E6F4FF;
+  
+  --color-surface: #F5F7FA;
+  --color-surface-card: #FFFFFF;
+  
+  --color-border: #E5E7EB;
+  --color-border-focus: #1677FF;
+  
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  
+  --color-status-success-text: #16A34A;
+  --color-status-success-bg: #DCFCE7;
+  --color-status-warning-text: #D97706;
+  --color-status-warning-bg: #FEF3C7;
+  --color-status-danger-text: #DC2626;
+  --color-status-danger-bg: #FEE2E2;
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  /* Strict Radius */
+  --radius-input: 6px;
+  --radius-btn: 6px;
+  --radius-card: 8px;
+  
+  /* Strict Shadows */
+  --shadow-enterprise: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-dropdown: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Reset scale back to standard 16px to enforce structural grid rather than fake scaling */
+  html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    line-height: 1.5;
+  }
+
+  input, select, textarea, button {
+    font-family: inherit;
+  }
+  
+  /* Enterprise Table Base Density */
+  th {
+    background-color: #F9FAFB;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    padding: 12px 16px;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  td {
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+/* Minimal Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Base Utility Animations */
+.page-enter {
+  animation: pageEnter 0.15s ease-out forwards;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
