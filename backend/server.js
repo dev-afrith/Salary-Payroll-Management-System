@@ -32,6 +32,7 @@ const salaryRoutes = require('./routes/salary.routes');
 const payrollRoutes = require('./routes/payroll.routes');
 const leavesRoutes = require('./routes/leaves.routes');
 const reportRoutes = require('./routes/report.routes');
+const chatRoutes = require('./routes/chat.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
@@ -42,6 +43,7 @@ app.use('/api/salary', salaryRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/leaves', leavesRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

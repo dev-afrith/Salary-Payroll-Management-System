@@ -2,6 +2,7 @@ import { useState, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import ChatbotWidget from '../ui/ChatbotWidget';
 
 const AdminLayout = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -57,6 +58,7 @@ const AdminLayout = () => {
           </footer>
         </main>
       </div>
+      <ChatbotWidget />
     </div>
   );
 };
