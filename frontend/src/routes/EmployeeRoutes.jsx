@@ -10,6 +10,8 @@ const Leaves = lazy(() => import('../pages/employee/Leaves'));
 const ApplyLeave = lazy(() => import('../pages/employee/ApplyLeave'));
 const EmployeePayslips = lazy(() => import('../pages/employee/Payslips'));
 
+const Communication = lazy(() => import('../pages/shared/Communication'));
+
 const ComingSoon = ({ title }) => (
   <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
     <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-blue-100">
@@ -48,6 +50,9 @@ const EmployeeRoutes = () => (
       {/* Salary — Module 4 ✅ */}
       <Route path="salary" element={<Suspense fallback={<PageLoader />}><Salary /></Suspense>} />
       <Route path="payslips" element={<Suspense fallback={<PageLoader />}><EmployeePayslips /></Suspense>} />
+
+      {/* Communication */}
+      <Route path="communication" element={<Suspense fallback={<PageLoader />}><Communication /></Suspense>} />
 
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Route>

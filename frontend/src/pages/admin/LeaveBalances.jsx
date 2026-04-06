@@ -37,7 +37,7 @@ const LeaveBalances = () => {
 
   useEffect(() => {
     fetchData();
-    document.title = 'Leave Balances | PayrollPro';
+    document.title = 'Leave Balances | AstraX Technologies';
   }, [year]);
 
   const handleAllocate = async (e) => {

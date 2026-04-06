@@ -6,6 +6,7 @@ import AdminLayout from '../components/layout/AdminLayout';
 const Dashboard = lazy(() => import('../pages/admin/Dashboard'));
 const Employees = lazy(() => import('../pages/admin/Employees'));
 const AddEmployee = lazy(() => import('../pages/admin/AddEmployee'));
+const EditEmployee = lazy(() => import('../pages/admin/EditEmployee'));
 const EmployeeProfile = lazy(() => import('../pages/admin/EmployeeProfile'));
 const Departments = lazy(() => import('../pages/admin/Departments'));
 
@@ -30,6 +31,12 @@ const MonthlyReport = lazy(() => import('../pages/admin/MonthlyReport'));
 const EmployeeReportList = lazy(() => import('../pages/admin/EmployeeReportList'));
 const EmployeeReport = lazy(() => import('../pages/admin/EmployeeReport'));
 const DepartmentReport = lazy(() => import('../pages/admin/DepartmentReport'));
+
+// Communication
+const Communication = lazy(() => import('../pages/shared/Communication'));
+
+// Security
+const ResetRequests = lazy(() => import('../pages/admin/ResetRequests'));
 
 // Placeholder component for pages not yet built
 const ComingSoon = ({ title }) => (
@@ -62,7 +69,7 @@ const AdminRoutes = () => (
       <Route path="employees" element={<Suspense fallback={<PageLoader />}><Employees /></Suspense>} />
       <Route path="employees/add" element={<Suspense fallback={<PageLoader />}><AddEmployee /></Suspense>} />
       <Route path="employees/:id" element={<Suspense fallback={<PageLoader />}><EmployeeProfile /></Suspense>} />
-      <Route path="employees/:id/edit" element={<Suspense fallback={<PageLoader />}><ComingSoon title="Edit Employee Profile" /></Suspense>} />
+      <Route path="employees/:id/edit" element={<Suspense fallback={<PageLoader />}><EditEmployee /></Suspense>} />
       <Route path="departments" element={<Suspense fallback={<PageLoader />}><Departments /></Suspense>} />
 
       {/* Attendance — Module 3 ✅ */}
@@ -90,6 +97,12 @@ const AdminRoutes = () => (
 
       {/* Settings */}
       <Route path="settings" element={<ComingSoon title="Company Core Settings" />} />
+
+      {/* Communication */}
+      <Route path="communication" element={<Suspense fallback={<PageLoader />}><Communication /></Suspense>} />
+
+      {/* Security */}
+      <Route path="reset-requests" element={<Suspense fallback={<PageLoader />}><ResetRequests /></Suspense>} />
 
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Route>

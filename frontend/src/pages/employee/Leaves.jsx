@@ -30,7 +30,7 @@ const EmployeeLeaves = () => {
       }
     };
     fetchData();
-    document.title = 'My Leaves | PayrollPro';
+    document.title = 'My Leaves | AstraX Technologies';
   }, [currentYear]);
 
   return (
@@ -51,20 +51,22 @@ const EmployeeLeaves = () => {
           [1, 2, 3].map(i => <div key={i} className="h-40 bg-slate-100 animate-pulse rounded-2xl"></div>)
         ) : balances.length > 0 ? (
           balances.map(b => (
-            <div key={b.id} className="bg-white p-7 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between" style={{ borderTop: `4px solid ${b.color}` }}>
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="font-semibold text-lg text-slate-900">{b.leave_name}</h3>
-                <span className={`text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full ${b.is_paid ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+            <div key={b.leave_type_id} className="relative overflow-hidden bg-white/40 backdrop-blur-md p-7 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 flex flex-col justify-between transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+              <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: b.color || '#3B82F6' }}></div>
+              <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full opacity-10 blur-2xl" style={{ backgroundColor: b.color || '#3B82F6' }}></div>
+              <div className="relative z-10 flex justify-between items-start mb-4">
+                <h3 className="font-bold text-lg text-slate-900">{b.leave_name}</h3>
+                <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full ${b.is_paid ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
                   {b.is_paid ? 'Paid' : 'Unpaid'}
                 </span>
               </div>
-              <div className="flex items-end gap-2">
-                <span className="text-5xl font-bold text-slate-900 leading-none tracking-tight">{b.remaining}</span>
-                <span className="text-sm font-semibold text-slate-400 mb-1">days left</span>
+              <div className="relative z-10 flex items-end gap-2">
+                <span className="text-6xl font-black text-slate-900 leading-none tracking-tighter">{b.remaining}</span>
+                <span className="text-sm font-bold text-slate-500 mb-1 uppercase tracking-wide">days left</span>
               </div>
-              <div className="flex gap-4 mt-6 text-sm font-semibold text-slate-500">
-                <span>Allocated: <strong className="text-slate-900">{b.allocated}</strong></span>
-                <span>Used: <strong className="text-slate-900">{b.used}</strong></span>
+              <div className="relative z-10 flex gap-4 mt-6 text-sm font-semibold text-slate-600">
+                <span className="bg-white/60 px-3 py-1.5 rounded-lg border border-white/80">Allocated: <strong className="text-slate-900">{b.allocated}</strong></span>
+                <span className="bg-white/60 px-3 py-1.5 rounded-lg border border-white/80">Used: <strong className="text-slate-900">{b.used}</strong></span>
               </div>
             </div>
           ))
@@ -112,17 +114,22 @@ const EmployeeLeaves = () => {
                     <td className="px-6 py-4 text-center font-bold text-lg text-slate-900">{app.total_days}</td>
                     <td className="px-6 py-4 text-base text-slate-500">{new Date(app.applied_at).toLocaleDateString('en-IN')}</td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex justify-center">
-                        <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                          app.status === 'Approved' ? 'bg-green-50 text-green-700' :
-                          app.status === 'Rejected' ? 'bg-red-50 text-red-700' :
-                          'bg-amber-50 text-amber-700'
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <span className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                          app.status === 'Approved' ? 'bg-green-50 text-green-700 border border-green-100' :
+                          app.status === 'Rejected' ? 'bg-red-50 text-red-700 border border-red-100' :
+                          'bg-amber-50 text-amber-700 border border-amber-100'
                         }`}>
                           {app.status === 'Approved' ? <CheckCircle2 size={16} /> :
                            app.status === 'Rejected' ? <XCircle size={16} /> :
                            <Clock size={16} />}
                           {app.status}
                         </span>
+                        {app.status === 'Rejected' && app.admin_remarks && (
+                          <span className="text-[10px] font-semibold text-red-600 bg-red-50/50 border border-red-100 px-2 py-1 rounded-md max-w-[140px] text-center leading-tight">
+                            "{app.admin_remarks}"
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>

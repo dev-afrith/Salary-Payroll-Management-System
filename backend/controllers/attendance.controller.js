@@ -6,7 +6,11 @@ const db = require('../config/db');
 const markAttendance = async (req, res) => {
   try {
     const userId = req.user.employee_db_id || req.user.id; // from auth token
-    const today = new Date().toISOString().split('T')[0];
+    const localDate = new Date();
+    const lYear = localDate.getFullYear();
+    const lMonth = String(localDate.getMonth() + 1).padStart(2, '0');
+    const lDay = String(localDate.getDate()).padStart(2, '0');
+    const today = `${lYear}-${lMonth}-${lDay}`;
     const now = new Date().toLocaleTimeString('en-US', { hourCycle: 'h23', hour: '2-digit', minute:'2-digit', second:'2-digit' });
 
     // Check if record exists for today

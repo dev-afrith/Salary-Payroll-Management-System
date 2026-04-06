@@ -16,9 +16,10 @@ const EmployeeReportList = () => {
     const fetchEmployees = async () => {
       setLoading(true);
       try {
-        const { data } = await API.get('/employees');
+        const { data } = await API.get('/employees?limit=1000');
         // Filter to only Approved ones for analytics
-        setEmployees(data.filter(e => e.status === 'Approved'));
+        const empList = data.employees || [];
+        setEmployees(empList.filter(e => e.status === 'Approved'));
       } catch (error) {
         toast.error('Failed to load employees');
       } finally {
@@ -26,7 +27,7 @@ const EmployeeReportList = () => {
       }
     };
     fetchEmployees();
-    document.title = 'Employee Reports | PayrollPro';
+    document.title = 'Employee Reports | AstraX Technologies';
   }, []);
 
   const filtered = employees.filter(e => 

@@ -45,7 +45,7 @@ Keep your answer extremely short and to the point. Provide short instructions us
       `, [empId, empCodeString]);
 
       const [leaveBalance] = await db.query(`
-        SELECT lt.name, lb.remaining 
+        SELECT lt.name, (COALESCE(lb.allocated, 0) - COALESCE(lb.used, 0)) as remaining 
         FROM leave_balance lb
         JOIN leave_types lt ON lb.leave_type_id = lt.id
         JOIN employees e ON e.id = lb.employee_id

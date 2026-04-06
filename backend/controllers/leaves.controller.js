@@ -52,7 +52,7 @@ const getAllocateBalances = async (req, res) => {
     const [rows] = await db.query(
       `SELECT e.id as employee_id, e.employee_id as emp_code, e.full_name,
               lb.id as balance_id, lb.leave_type_id, lt.name as leave_name,
-              lb.allocated, lb.used, lb.remaining
+              lb.allocated, lb.used, (COALESCE(lb.allocated, 0) - COALESCE(lb.used, 0)) as remaining
        FROM employees e
        JOIN leave_types lt
        LEFT JOIN leave_balance lb ON e.id = lb.employee_id AND lb.leave_type_id = lt.id AND lb.year = ?
@@ -106,10 +106,10 @@ const allocateLeaves = async (req, res) => {
 
     for (const empId of employeesToAllocate) {
       await db.query(
-        `INSERT INTO leave_balance (employee_id, leave_type_id, year, allocated, used, remaining)
-         VALUES (?, ?, ?, ?, 0, ?)
-         ON DUPLICATE KEY UPDATE allocated = ?, remaining = ? - used`,
-        [empId, type_id, year, days, days, days, days]
+        `INSERT INTO leave_balance (employee_id, leave_type_id, year, allocated, used)
+         VALUES (?, ?, ?, ?, 0)
+         ON DUPLICATE KEY UPDATE allocated = ?`,
+        [empId, type_id, year, days, days]
       );
     }
 
@@ -126,10 +126,13 @@ const getMyBalances = async (req, res) => {
     const { year } = req.query;
     
     const [rows] = await db.query(
-      `SELECT lb.*, lt.name as leave_name, lt.color, lt.is_paid 
-       FROM leave_balance lb
-       JOIN leave_types lt ON lb.leave_type_id = lt.id
-       WHERE lb.employee_id = ? AND lb.year = ?`,
+      `SELECT lt.id as leave_type_id, lt.name as leave_name, lt.color, lt.is_paid,
+              COALESCE(lb.allocated, 0) as allocated,
+              COALESCE(lb.used, 0) as used,
+              (COALESCE(lb.allocated, 0) - COALESCE(lb.used, 0)) as remaining
+       FROM leave_types lt
+       LEFT JOIN leave_balance lb ON lt.id = lb.leave_type_id AND lb.employee_id = ? AND lb.year = ?
+       ORDER BY lt.name ASC`,
       [userId, year || new Date().getFullYear()]
     );
     res.json(rows);
@@ -148,7 +151,7 @@ const applyForLeave = async (req, res) => {
 
     // Verify balance
     const [balanceRows] = await db.query(
-      `SELECT remaining FROM leave_balance WHERE employee_id = ? AND leave_type_id = ? AND year = ?`,
+      `SELECT (COALESCE(allocated, 0) - COALESCE(used, 0)) as remaining FROM leave_balance WHERE employee_id = ? AND leave_type_id = ? AND year = ?`,
       [userId, leave_type_id, year]
     );
 
@@ -231,9 +234,9 @@ const updateApplicationStatus = async (req, res) => {
       if (status === 'Approved') {
         const year = new Date(app.from_date).getFullYear();
         await connection.query(
-          `UPDATE leave_balance SET used = used + ?, remaining = remaining - ?
+          `UPDATE leave_balance SET used = used + ?
            WHERE employee_id = ? AND leave_type_id = ? AND year = ?`,
-          [app.total_days, app.total_days, app.employee_id, app.leave_type_id, year]
+          [app.total_days, app.employee_id, app.leave_type_id, year]
         );
       }
 

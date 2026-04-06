@@ -32,7 +32,7 @@ const DailyAttendance = () => {
 
   useEffect(() => {
     fetchDailyAttendance(date);
-    document.title = 'Daily Attendance | PayrollPro';
+    document.title = 'Daily Attendance | AstraX Technologies';
   }, [date]);
 
   const handleStatusChange = (employeeId, newStatus) => {

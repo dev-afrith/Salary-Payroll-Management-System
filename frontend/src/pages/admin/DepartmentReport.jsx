@@ -27,7 +27,7 @@ const DepartmentReport = () => {
       }
     };
     fetchReport();
-    document.title = 'Department Report | PayrollPro';
+    document.title = 'Department Report | AstraX Technologies';
   }, [month, year]);
 
   const totalExpense = reportData.reduce((sum, d) => sum + (Number(d.total_net_salary) || 0), 0);

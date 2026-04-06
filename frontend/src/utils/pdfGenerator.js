@@ -26,7 +26,7 @@ export const generatePayslipPDF = (data) => {
   // 1. Header
   doc.setFontSize(22);
   doc.setTextColor(40);
-  doc.text('PayrollPro Inc.', pageWidth / 2, 20, { align: 'center' });
+  doc.text('AstraX Technologies', pageWidth / 2, 20, { align: 'center' });
   doc.setFontSize(10);
   doc.setTextColor(100);
   doc.text('123 Corporate Park, Bangalore, KA, India', pageWidth / 2, 28, { align: 'center' });

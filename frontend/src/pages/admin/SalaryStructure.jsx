@@ -29,7 +29,7 @@ const SalaryStructure = () => {
 
   useEffect(() => {
     fetchStructures();
-    document.title = 'Salary Structure | PayrollPro';
+    document.title = 'Salary Structure | AstraX Technologies';
   }, []);
 
   const handleSave = async (e) => {

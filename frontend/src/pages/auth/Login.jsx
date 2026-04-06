@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axios';
 import toast from 'react-hot-toast';
-import { Building2, Eye, EyeOff, LogIn, Loader2, ShieldCheck, UserCircle, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Building2, Eye, EyeOff, LogIn, Loader2, ShieldCheck, UserCircle, CheckCircle2, AlertCircle, KeyRound, ArrowLeft, Phone } from 'lucide-react';
 import Modal from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
 
@@ -16,8 +16,32 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Forgot Password State
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmpId, setForgotEmpId] = useState('');
+  const [forgotPhone, setForgotPhone] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+
   // Dialog State
   const [dialog, setDialog] = useState({ isOpen: false, type: 'info', title: '', message: '' });
+
+  // Real-time Stats State
+  const [stats, setStats] = useState({ employees: '...', payslips: '...' });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data } = await axios.get('/public/stats');
+        setStats({ 
+          employees: data.employees !== undefined ? data.employees : '500+', 
+          payslips: data.payslips !== undefined ? data.payslips : '2,000+' 
+        });
+      } catch (err) {
+        setStats({ employees: '500+', payslips: '2,000+' });
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,6 +101,30 @@ const Login = () => {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setError('');
+    try {
+      const { data } = await axios.post('/auth/forgot-password', {
+        employee_id: forgotEmpId,
+        phone: forgotPhone
+      });
+      setDialog({ isOpen: true, type: 'success', title: 'Request Submitted', message: data.message });
+      // Go back to login after a delay
+      setTimeout(() => {
+        setForgotMode(false);
+        setDialog({ isOpen: false, type: 'info', title: '', message: '' });
+      }, 3000);
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to submit request. Please try again.';
+      setError(message);
+      setDialog({ isOpen: true, type: 'error', title: 'Request Failed', message });
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       {/* Left Panel — Branding */}
@@ -92,7 +140,7 @@ const Login = () => {
               <Building2 className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">PayrollPro</h1>
+              <h1 className="text-3xl font-bold tracking-tight">AstraX Technologies</h1>
               <p className="text-blue-200 text-sm">Salary Management System</p>
             </div>
           </div>
@@ -106,8 +154,8 @@ const Login = () => {
           </p>
           <div className="mt-12 grid grid-cols-2 gap-4 max-w-sm">
             {[
-              { label: 'Employees', value: '500+' },
-              { label: 'Payslips/mo', value: '2,000+' },
+              { label: 'Employees', value: stats.employees },
+              { label: 'Payslips/mo', value: stats.payslips },
               { label: 'Compliance', value: '100%' },
               { label: 'Uptime', value: '99.9%' }
             ].map((stat) => (
@@ -129,7 +177,7 @@ const Login = () => {
               <Building2 className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">PayrollPro</h1>
+              <h1 className="text-2xl font-bold text-gray-900">AstraX Technologies</h1>
               <p className="text-gray-500 text-xs">Salary Management System</p>
             </div>
           </div>
@@ -167,82 +215,158 @@ const Login = () => {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {activeTab === 'admin' ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@payrollpro.com"
-                    required
-                    className="border border-gray-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Employee ID</label>
-                  <input
-                    type="text"
-                    value={employeeId}
-                    onChange={(e) => setEmployeeId(e.target.value)}
-                    placeholder="EMP001"
-                    required
-                    className="border border-gray-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    required
-                    className="border border-gray-200 rounded-lg px-3 py-2.5 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full text-gray-900 placeholder:text-gray-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {forgotMode ? (
+              /* ── Forgot Password Form ── */
+              <>
+                <div className="flex items-center gap-3 mb-6">
+                  <button onClick={() => { setForgotMode(false); setError(''); }} className="text-gray-400 hover:text-blue-600 transition-colors">
+                    <ArrowLeft className="w-5 h-5" />
                   </button>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Forgot Password</h3>
+                    <p className="text-xs text-gray-500">Enter your details to request a password reset</p>
+                  </div>
                 </div>
-              </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-                  {error}
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Employee ID</label>
+                    <input
+                      type="text"
+                      value={forgotEmpId}
+                      onChange={(e) => setForgotEmpId(e.target.value)}
+                      placeholder="EMP001"
+                      required
+                      className="border border-gray-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full text-gray-900 placeholder:text-gray-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Registered Mobile Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="tel"
+                        value={forgotPhone}
+                        onChange={(e) => setForgotPhone(e.target.value)}
+                        placeholder="Enter your mobile number"
+                        required
+                        className="border border-gray-200 rounded-lg pl-10 pr-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full text-gray-900 placeholder:text-gray-400"
+                      />
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    {forgotLoading ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+                    ) : (
+                      <><KeyRound className="w-4 h-4" /> Submit Reset Request</>
+                    )}
+                  </button>
+                </form>
+
+                <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                  <p className="text-xs text-blue-700">Your request will be sent to the administrator. Once approved, you will receive a new password from admin.</p>
                 </div>
-              )}
+              </>
+            ) : (
+              /* ── Normal Login Form ── */
+              <>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {activeTab === 'admin' ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="admin@astraxtech.com"
+                        required
+                        className="border border-gray-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full text-gray-900 placeholder:text-gray-400"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Employee ID</label>
+                      <input
+                        type="text"
+                        value={employeeId}
+                        onChange={(e) => setEmployeeId(e.target.value)}
+                        placeholder="EMP001"
+                        required
+                        className="border border-gray-200 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full text-gray-900 placeholder:text-gray-400"
+                      />
+                    </div>
+                  )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="w-4 h-4" />
-                    Sign In
-                  </>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        required
+                        className="border border-gray-200 rounded-lg px-3 py-2.5 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full text-gray-900 placeholder:text-gray-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
+                    ) : (
+                      <><LogIn className="w-4 h-4" /> Sign In</>
+                    )}
+                  </button>
+                </form>
+
+                {activeTab === 'employee' && (
+                  <div className="mt-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => { setForgotMode(true); setError(''); }}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
                 )}
-              </button>
-            </form>
+              </>
+            )}
 
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-400">
-                {activeTab === 'admin'
+                {forgotMode
+                  ? 'Remember your password? Click the back arrow above.'
+                  : activeTab === 'admin'
                   ? 'Admin access only. Contact system administrator for access.'
                   : 'Use your Employee ID provided by HR to login.'}
               </p>
@@ -250,7 +374,7 @@ const Login = () => {
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-6">
-            © {new Date().getFullYear()} PayrollPro. All rights reserved.
+            © {new Date().getFullYear()} AstraX Technologies. All rights reserved.
           </p>
         </div>
       </div>

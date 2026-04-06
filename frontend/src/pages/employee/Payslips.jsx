@@ -31,7 +31,7 @@ const EmployeePayslips = () => {
 
   useEffect(() => {
     fetchHistory();
-    document.title = 'My Payslips | PayrollPro';
+    document.title = 'My Payslips | AstraX Technologies';
   }, [year]);
 
   const handleDownload = async (p) => {

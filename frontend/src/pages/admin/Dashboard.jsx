@@ -14,7 +14,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = 'Dashboard | Enterprise Payroll';
+    document.title = 'Dashboard | AstraX Technologies';
     fetchAll();
   }, []);
 

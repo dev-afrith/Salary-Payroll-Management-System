@@ -28,7 +28,7 @@ const MonthlyAttendance = () => {
       }
     };
     fetchSummary();
-    document.title = 'Monthly Attendance | PayrollPro';
+    document.title = 'Monthly Attendance | AstraX Technologies';
   }, [month, year]);
 
   const months = [

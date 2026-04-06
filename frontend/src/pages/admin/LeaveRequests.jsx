@@ -4,12 +4,17 @@ import toast from 'react-hot-toast';
 import API from '../../utils/axios';
 
 import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
 
 const LeaveRequests = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Pending');
   const [processingId, setProcessingId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalAction, setModalAction] = useState(null); // 'Approved' | 'Rejected'
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [adminRemarks, setAdminRemarks] = useState('');
 
   const fetchApplications = async () => {
     setLoading(true);
@@ -25,14 +30,29 @@ const LeaveRequests = () => {
 
   useEffect(() => {
     fetchApplications();
-    document.title = 'Leave Requests | PayrollPro';
+    document.title = 'Leave Requests | AstraX Technologies';
   }, []);
 
-  const handleStatusUpdate = async (id, status) => {
-    setProcessingId(id);
+  const openActionModal = (app, action) => {
+    setSelectedApp(app);
+    setModalAction(action);
+    setAdminRemarks('');
+    setIsModalOpen(true);
+  };
+
+  const confirmAction = async () => {
+    if (modalAction === 'Rejected' && !adminRemarks.trim()) {
+      return toast.error('Rejection reason is required.');
+    }
+    
+    setProcessingId(selectedApp.id);
     try {
-      await API.put(`/leaves/applications/${id}/status`, { status });
-      toast.success(`Leave request ${status.toLowerCase()}`);
+      await API.put(`/leaves/applications/${selectedApp.id}/status`, { 
+        status: modalAction,
+        admin_remarks: adminRemarks 
+      });
+      toast.success(`Leave request ${modalAction.toLowerCase()}`);
+      setIsModalOpen(false);
       fetchApplications();
     } catch (error) {
       toast.error('Failed to update request status');
@@ -71,78 +91,91 @@ const LeaveRequests = () => {
         {loading ? (
           <div className="p-10 text-center text-gray-400 animate-pulse bg-white rounded-2xl border border-gray-100">Loading requests...</div>
         ) : filteredApps.length > 0 ? (
-          filteredApps.map(app => (
-            <div key={app.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:shadow-md">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-bold text-gray-900 text-lg">{app.full_name}</h3>
-                  <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded-md">{app.emp_code}</span>
-                  <span 
-                    className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full text-white"
-                    style={{ backgroundColor: app.color }}
-                  >
-                    {app.leave_name}
-                  </span>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-8 text-sm text-slate-600 mb-4 mt-4">
-                  <div>
-                    <span className="text-slate-400 text-sm font-semibold block mb-1 uppercase tracking-wider">Duration</span>
-                    <span className="text-base font-semibold text-slate-800">
-                      {new Date(app.from_date).toLocaleDateString('en-IN')} — {new Date(app.to_date).toLocaleDateString('en-IN')}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 text-sm font-semibold block mb-1 uppercase tracking-wider">Total Days</span>
-                    <span className="text-base font-semibold text-slate-800">{app.total_days} Days</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 text-sm font-semibold block mb-1 uppercase tracking-wider">Applied On</span>
-                    <span className="text-base font-medium text-slate-700">{new Date(app.applied_at).toLocaleDateString('en-IN')}</span>
-                  </div>
-                </div>
-
-                {app.reason && (
-                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <p className="text-xs text-gray-500 font-bold mb-1 uppercase tracking-wider">Reason</p>
-                    <p className="text-sm text-gray-700 italic">"{app.reason}"</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3 md:border-l md:border-slate-100 md:pl-6">
-                {app.status === 'Pending' ? (
-                  <>
-                    <Button 
-                      variant="danger" 
-                      onClick={() => handleStatusUpdate(app.id, 'Rejected')}
-                      loading={processingId === app.id}
-                      disabled={processingId !== null}
-                      className="text-sm font-semibold px-6 py-2.5"
-                    >
-                      Reject
-                    </Button>
-                    <Button 
-                      className="bg-green-600 hover:bg-green-700 text-white shadow-green-200 text-sm font-semibold px-6 py-2.5" 
-                      icon={CheckCircle2}
-                      onClick={() => handleStatusUpdate(app.id, 'Approved')}
-                      loading={processingId === app.id}
-                      disabled={processingId !== null}
-                    >
-                      Approve
-                    </Button>
-                  </>
-                ) : (
-                  <div className={`flex flex-col items-center justify-center p-4 rounded-xl min-w-[120px] ${
-                    app.status === 'Approved' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
-                  }`}>
-                    {app.status === 'Approved' ? <CheckCircle2 size={24} className="mb-2" /> : <XCircle size={24} className="mb-2" />}
-                    <span className="font-bold text-sm tracking-wide uppercase">{app.status}</span>
-                  </div>
-                )}
-              </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden w-full transition-all">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 text-sm uppercase tracking-wide text-slate-500 bg-slate-50">
+                    <th className="px-6 py-4 font-semibold">Employee</th>
+                    <th className="px-6 py-4 font-semibold">Leave Type</th>
+                    <th className="px-6 py-4 font-semibold">Duration & Days</th>
+                    <th className="px-6 py-4 font-semibold">Applied On</th>
+                    <th className="px-6 py-4 font-semibold">Reason</th>
+                    <th className="px-6 py-4 font-semibold text-center">Status / Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filteredApps.map(app => (
+                    <tr key={app.id} className="hover:bg-blue-50/50 transition-colors">
+                      <td className="px-6 py-4 align-top">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-gray-900 text-base">{app.full_name}</span>
+                          <span className="text-xs font-mono text-gray-400 mt-1">{app.emp_code}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-top">
+                        <span 
+                          className="font-semibold text-sm px-3 py-1.5 rounded-full text-white inline-block"
+                          style={{ backgroundColor: app.color }}
+                        >
+                          {app.leave_name}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 align-top">
+                        <div className="text-sm font-semibold text-slate-800">
+                          {new Date(app.from_date).toLocaleDateString('en-IN')} — {new Date(app.to_date).toLocaleDateString('en-IN')}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1 font-bold">
+                          {app.total_days} Days
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 align-top text-sm font-medium text-slate-700">
+                        {new Date(app.applied_at).toLocaleDateString('en-IN')}
+                      </td>
+                      <td className="px-6 py-4 align-top">
+                        {app.reason ? (
+                          <div className="text-sm text-gray-700 italic max-w-xs truncate" title={app.reason}>
+                            "{app.reason}"
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 align-top text-center min-w-[200px]">
+                        {app.status === 'Pending' ? (
+                          <div className="flex items-center justify-center gap-2 flex-wrap">
+                            <Button 
+                              variant="danger" 
+                              onClick={() => openActionModal(app, 'Rejected')}
+                              className="text-xs font-bold px-4 py-2"
+                            >
+                              Reject
+                            </Button>
+                            <Button 
+                              className="bg-green-600 hover:bg-green-700 text-white shadow-green-200 text-xs font-bold px-4 py-2" 
+                              icon={CheckCircle2}
+                              onClick={() => openActionModal(app, 'Approved')}
+                            >
+                              Approve
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-center">
+                            <span className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                              app.status === 'Approved' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
+                            }`}>
+                              {app.status === 'Approved' ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                              {app.status}
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))
+          </div>
         ) : (
           <div className="p-16 text-center bg-white rounded-2xl border border-gray-100">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -153,6 +186,41 @@ const LeaveRequests = () => {
           </div>
         )}
       </div>
+
+      <Modal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalAction === 'Approved' ? 'Confirm Approval' : 'Provide Rejection Reason'}
+        footer={
+          <>
+            <Button className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button 
+              className={modalAction === 'Approved' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}
+              onClick={confirmAction}
+              loading={processingId === selectedApp?.id}
+            >
+              Confirm {modalAction === 'Approved' ? 'Approval' : 'Rejection'}
+            </Button>
+          </>
+        }
+      >
+        {modalAction === 'Approved' ? (
+          <p className="text-gray-600">Are you sure you want to approve this leave request from <strong className="text-gray-900">{selectedApp?.full_name}</strong> for {selectedApp?.total_days} days?</p>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-gray-600">You are about to reject the leave request for <strong className="text-gray-900">{selectedApp?.full_name}</strong>. Please provide a mandatory reason:</p>
+            <textarea
+              className="w-full border border-slate-200 rounded-xl p-4 outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+              rows="4"
+              placeholder="Enter rejection reason here..."
+              value={adminRemarks}
+              onChange={(e) => setAdminRemarks(e.target.value)}
+              required
+            ></textarea>
+          </div>
+        )}
+      </Modal>
+
     </div>
   );
 };

@@ -32,8 +32,21 @@ const EmployeeAttendance = () => {
       setHistory(data);
       
       // Check if there's a record for today
-      const todayStr = new Date().toISOString().split('T')[0];
-      const todayData = data.find(r => r.date.startsWith(todayStr));
+      const todayLocal = new Date().toLocaleDateString('en-CA'); // Gets YYYY-MM-DD locally natively in most browsers, or just use YYYY-MM-DD via parts
+      
+      const localYear = new Date().getFullYear();
+      const localMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+      const localDay = String(new Date().getDate()).padStart(2, '0');
+      const localTodayStr = `${localYear}-${localMonth}-${localDay}`;
+
+      const todayData = data.find(r => {
+        const d = new Date(r.date);
+        const rYear = d.getFullYear();
+        const rMonth = String(d.getMonth() + 1).padStart(2, '0');
+        const rDay = String(d.getDate()).padStart(2, '0');
+        return `${rYear}-${rMonth}-${rDay}` === localTodayStr;
+      });
+      
       setTodayRecord(todayData || null);
 
     } catch (error) {
@@ -45,7 +58,7 @@ const EmployeeAttendance = () => {
 
   useEffect(() => {
     fetchAttendance();
-    document.title = 'My Attendance | PayrollPro';
+    document.title = 'My Attendance | AstraX Technologies';
   }, [month, year]);
 
   const handlePunch = async () => {

@@ -14,7 +14,7 @@ const Dashboard = () => {
   const [pendingLeaves, setPendingLeaves] = useState(0);
 
   useEffect(() => {
-    document.title = 'My Dashboard | PayrollPro';
+    document.title = 'My Dashboard | AstraX Technologies';
     fetchAll();
   }, []);
 
@@ -65,7 +65,7 @@ const Dashboard = () => {
     }
   };
 
-  const totalBalance = leaveBalance.reduce((sum, l) => sum + (l.remaining || 0), 0);
+  const totalBalance = leaveBalance.reduce((sum, l) => sum + Number(l.remaining || 0), 0);
 
   const cards = [
     { label: 'Net Salary', value: netSalary !== null ? formatINR(netSalary) : '—', icon: DollarSign, lightBg: 'bg-emerald-50', textColor: 'text-emerald-600', color: 'bg-emerald-500' },
@@ -125,10 +125,13 @@ const Dashboard = () => {
         {leaveBalance.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {leaveBalance.map((leave) => (
-              <div key={leave.leave_type_id || leave.name} className="bg-slate-50 rounded-xl p-7 text-center border border-slate-100 min-h-[140px]">
-                <p className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-1">{leave.name || leave.leave_type}</p>
-                <p className="text-4xl font-bold tracking-tight text-slate-900 mt-4 mb-1">{leave.remaining ?? 0}</p>
-                <p className="text-sm text-slate-400 mt-1">of {leave.allocated ?? 0} days</p>
+              <div key={leave.leave_type_id || leave.leave_name} 
+                className="relative overflow-hidden bg-white/40 backdrop-blur-md rounded-2xl p-7 text-center border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] min-h-[140px] transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+                <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: leave.color || '#3B82F6' }}></div>
+                <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-10 blur-xl" style={{ backgroundColor: leave.color || '#3B82F6' }}></div>
+                <p className="text-sm font-bold uppercase tracking-wider text-slate-600 mb-1 relative z-10">{leave.leave_name}</p>
+                <p className="text-5xl font-black tracking-tight text-slate-900 mt-4 mb-2 relative z-10">{leave.remaining ?? 0}</p>
+                <p className="text-sm font-medium text-slate-500 relative z-10">of {leave.allocated ?? 0} days</p>
               </div>
             ))}
           </div>

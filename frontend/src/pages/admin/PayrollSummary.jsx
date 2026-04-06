@@ -34,7 +34,7 @@ const PayrollSummary = () => {
       }
     };
     fetchSummary();
-    document.title = 'Payroll Summary | PayrollPro';
+    document.title = 'Payroll Summary | AstraX Technologies';
   }, [month, year]);
 
   return (

@@ -22,7 +22,7 @@ const EmployeeSalary = () => {
       }
     };
     fetchPayroll();
-    document.title = 'My Salary | PayrollPro';
+    document.title = 'My Salary | AstraX Technologies';
   }, [year]);
 
   const months = [

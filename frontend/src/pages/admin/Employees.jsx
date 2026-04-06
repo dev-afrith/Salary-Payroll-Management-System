@@ -68,7 +68,7 @@ const Employees = () => {
 
   useEffect(() => {
     fetchDepartments();
-    document.title = 'Employees | Enterprise Payroll';
+    document.title = 'Employees | AstraX Technologies';
   }, []);
 
   const handleDelete = async () => {

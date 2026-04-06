@@ -33,7 +33,7 @@ const Profile = () => {
       }
     };
     if (user) fetchProfile();
-    document.title = 'My Profile | PayrollPro';
+    document.title = 'My Profile | AstraX Technologies';
   }, [user]);
 
   if (loading) return (

@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Building2, CalendarDays,
   CalendarRange, Clock, DollarSign, PlayCircle, FileText,
   Palmtree, BarChart2, Receipt,
-  ChevronLeft, ChevronRight, LogOut
+  ChevronLeft, ChevronRight, LogOut, MessageSquare, KeyRound
 } from 'lucide-react';
 
 const adminLinks = [
@@ -34,6 +34,12 @@ const adminLinks = [
   { label: 'Monthly Report',    path: '/admin/reports/monthly',     icon: BarChart2 },
   { label: 'Employee Report',   path: '/admin/reports/employee',    icon: Users },
   { label: 'Dept Report',       path: '/admin/reports/department',  icon: Building2 },
+
+  { section: 'COMMUNICATION' },
+  { label: 'Messages',          path: '/admin/communication',       icon: MessageSquare },
+
+  { section: 'SECURITY' },
+  { label: 'Password Resets',   path: '/admin/reset-requests',      icon: KeyRound },
 ];
 
 const employeeLinks = [
@@ -47,6 +53,9 @@ const employeeLinks = [
   { section: 'LEAVES & PAYROLL' },
   { label: 'My Leaves',         path: '/employee/leaves',           icon: Palmtree },
   { label: 'My Payslips',       path: '/employee/payslips',         icon: Receipt },
+
+  { section: 'COMMUNICATION' },
+  { label: 'Messages',          path: '/employee/communication',    icon: MessageSquare },
 ];
 
 const Sidebar = ({ role = 'admin', isCollapsed, onToggle, onClose }) => {
@@ -63,11 +72,11 @@ const Sidebar = ({ role = 'admin', isCollapsed, onToggle, onClose }) => {
       {/* Brand */}
       <div className={`h-[64px] flex items-center gap-3 px-6 shrink-0 bg-[#002140] ${isCollapsed ? 'justify-center' : ''}`}>
         <div className="w-8 h-8 shrink-0 bg-[#1677FF] rounded flex items-center justify-center text-white font-bold text-base shadow-sm">
-          P
+          A
         </div>
         {!isCollapsed && (
           <div className="min-w-0">
-            <p className="text-white font-semibold text-lg leading-tight truncate tracking-tight">PayrollPro</p>
+            <p className="text-white font-semibold text-lg leading-tight truncate tracking-tight">AstraX</p>
           </div>
         )}
       </div>

@@ -1,41 +1,83 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Save, Info } from 'lucide-react';
+import { ArrowLeft, Save, Info, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import API from '../../utils/axios';
 
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Skeleton from '../../components/ui/Skeleton';
+import Badge from '../../components/ui/Badge';
 
-const AddEmployee = () => {
+const EditEmployee = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [selectedDept, setSelectedDept] = useState('');
+  const [employee, setEmployee] = useState(null);
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm({
-    defaultValues: {
-      gender: 'Male',
-      employment_type: 'Full-time',
-      basic_pay: 0
-    }
-  });
+  const { register, handleSubmit, formState: { errors, isDirty, dirtyFields }, reset, watch, setValue } = useForm();
 
+  // Format date for input[type="date"] (YYYY-MM-DD)
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+  };
+
+  // Fetch employee data and departments on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data } = await API.get('/departments');
-        setDepartments(data);
+        const [empRes, deptRes] = await Promise.all([
+          API.get(`/employees/${id}`),
+          API.get('/departments')
+        ]);
+
+        const emp = empRes.data;
+        setEmployee(emp);
+        setDepartments(deptRes.data);
+
+        // Set selected department to trigger designation fetch
+        if (emp.department_id) {
+          setSelectedDept(String(emp.department_id));
+        }
+
+        // Reset form with employee data
+        reset({
+          full_name: emp.full_name || '',
+          email: emp.email || '',
+          phone: emp.phone || '',
+          date_of_birth: formatDateForInput(emp.date_of_birth),
+          gender: emp.gender || 'Male',
+          date_of_joining: formatDateForInput(emp.date_of_joining),
+          employment_type: emp.employment_type || 'Full-time',
+          department_id: emp.department_id ? String(emp.department_id) : '',
+          designation_id: emp.designation_id ? String(emp.designation_id) : '',
+          basic_pay: emp.basic_pay || 0,
+          bank_account_number: emp.bank_account_number || '',
+          ifsc_code: emp.ifsc_code || '',
+          pan_number: emp.pan_number || '',
+          pf_number: emp.pf_number || '',
+          uan_number: emp.uan_number || '',
+        });
       } catch (error) {
-        toast.error('Failed to load departments');
+        toast.error('Failed to load employee details');
+        navigate('/admin/employees');
+      } finally {
+        setPageLoading(false);
       }
     };
     fetchData();
-    document.title = 'Add Employee | AstraX Technologies';
-  }, []);
+    document.title = 'Edit Employee | AstraX Technologies';
+  }, [id, navigate, reset]);
 
+  // Fetch designations when department changes
   useEffect(() => {
     if (selectedDept) {
       const fetchDesignations = async () => {
@@ -53,42 +95,82 @@ const AddEmployee = () => {
   }, [selectedDept]);
 
   const onSubmit = async (data) => {
-    setLoading(true);
+    if (!isDirty) {
+      toast('No changes to save', { icon: 'ℹ️' });
+      return;
+    }
+
+    setSaving(true);
     try {
-      await API.post('/employees', data);
-      toast.success('Employee added successfully! Pending approval.');
-      navigate('/admin/employees');
+      // Only send changed fields for cleaner updates
+      const changedData = {};
+      for (const key of Object.keys(dirtyFields)) {
+        changedData[key] = data[key];
+      }
+
+      await API.put(`/employees/${id}`, changedData);
+      toast.success('Employee updated successfully!');
+      navigate(`/admin/employees/${id}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to add employee');
+      toast.error(error.response?.data?.message || 'Failed to update employee');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const SectionHeader = ({ title }) => (
+  const SectionHeader = ({ title, subtitle }) => (
     <div className="mb-6 border-b border-border pb-3">
       <h2 className="text-base font-semibold text-text-primary tracking-tight">{title}</h2>
+      {subtitle && <p className="text-xs text-text-secondary mt-1">{subtitle}</p>}
     </div>
   );
 
   const selectClass = "w-full bg-surface border border-border rounded-input px-3 py-2 text-sm text-text-primary focus:ring-1 focus:ring-primary focus:border-primary focus:bg-white outline-none transition-all shadow-sm";
   const labelClass = "block text-xs font-semibold text-text-primary mb-1.5 inline-block";
 
+  // Loading skeleton
+  if (pageLoading) {
+    return (
+      <div className="page-enter w-full max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Skeleton className="w-10 h-10 rounded-xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+        </div>
+        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="page-enter w-full max-w-5xl mx-auto flex flex-col h-full relative">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button 
-          type="button"
-          onClick={() => navigate('/admin/employees')}
-          className="p-1.5 text-text-muted hover:text-text-primary hover:bg-surface rounded transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <h1 className="text-xl font-semibold text-text-primary tracking-tight">Add New Employee</h1>
-          <p className="text-sm text-text-secondary mt-0.5">Register a new staff member to the organization.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <button 
+            type="button"
+            onClick={() => navigate(`/admin/employees/${id}`)}
+            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-surface rounded transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-xl font-semibold text-text-primary tracking-tight">Edit Employee</h1>
+            <p className="text-sm text-text-secondary mt-0.5">
+              Update details for <span className="font-semibold text-text-primary">{employee?.full_name}</span>
+              <span className="ml-2 font-mono text-xs text-text-muted">{employee?.employee_id}</span>
+            </p>
+          </div>
         </div>
+        {employee && (
+          <Badge variant={employee.status} className="text-[10px] font-semibold px-2 py-0.5 uppercase tracking-wide">
+            {employee.status}
+          </Badge>
+        )}
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
@@ -96,7 +178,7 @@ const AddEmployee = () => {
           
           {/* Personal Details */}
           <div className="bg-surface-card border border-border rounded-card p-6 shadow-enterprise">
-            <SectionHeader title="Personal Information" />
+            <SectionHeader title="Personal Information" subtitle="Update the employee's personal details" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               <Input 
                 label="Full Name" 
@@ -136,7 +218,7 @@ const AddEmployee = () => {
 
           {/* Job Details */}
           <div className="bg-surface-card border border-border rounded-card p-6 shadow-enterprise">
-            <SectionHeader title="Employment Details" />
+            <SectionHeader title="Employment Details" subtitle="Modify job role and department information" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               <Input 
                 label="Joining Date" 
@@ -160,6 +242,8 @@ const AddEmployee = () => {
                   onChange={(e) => {
                     register('department_id').onChange(e);
                     setSelectedDept(e.target.value);
+                    // Reset designation when department changes
+                    setValue('designation_id', '', { shouldDirty: true });
                   }}
                 >
                   <option value="">Select Department</option>
@@ -188,7 +272,7 @@ const AddEmployee = () => {
 
           {/* Financial Details */}
           <div className="bg-surface-card border border-border rounded-card p-6 shadow-enterprise">
-            <SectionHeader title="Financial & Statutory" />
+            <SectionHeader title="Financial & Statutory" subtitle="Bank and statutory compliance details" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               <Input 
                 label="Monthly Basic Salary" 
@@ -205,36 +289,39 @@ const AddEmployee = () => {
             </div>
           </div>
 
-          {/* Login Security */}
+          {/* Info Note */}
           <div className="bg-surface-card border border-border rounded-card p-6 shadow-enterprise mb-8">
-            <SectionHeader title="System Access" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-              <Input 
-                label="System Password" 
-                type="password"
-                placeholder="Default will be Emp@123"
-                {...register('password')}
-              />
-              <div className="bg-surface p-4 rounded-card border border-border flex flex-col justify-center">
-                <p className="text-xs font-medium text-text-secondary leading-relaxed">
-                  <span className="font-semibold text-text-primary flex items-center gap-1.5 mb-1"><Info size={14} className="text-primary"/> Approval Process</span>
-                  New employees are registered as <span className="px-1 py-0.5 bg-status-warning-bg text-status-warning-text rounded font-semibold text-[10px] uppercase">Pending</span> by default. You must verify and approve them before system login is enabled.
-                </p>
-              </div>
+            <div className="bg-surface p-4 rounded-card border border-border flex flex-col justify-center">
+              <p className="text-xs font-medium text-text-secondary leading-relaxed">
+                <span className="font-semibold text-text-primary flex items-center gap-1.5 mb-1"><Info size={14} className="text-primary"/> Edit Note</span>
+                Changes to <span className="font-semibold">email address</span> will automatically sync to the login credentials. 
+                The employee's <span className="font-semibold">Employee ID</span> and <span className="font-semibold">status</span> cannot be modified from this form.
+              </p>
             </div>
           </div>
         </div>
 
         {/* Sticky Action Bar */}
-        <div className="fixed bottom-0 left-0 lg:left-[288px] right-0 bg-white border-t border-border p-4 px-6 md:px-8 flex justify-end gap-3 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-          <Button variant="outline" onClick={() => navigate('/admin/employees')} className="w-full sm:w-32">Cancel</Button>
-          <Button type="submit" loading={loading} icon={Save} className="w-full sm:w-auto px-6">
-            Register Employee
-          </Button>
+        <div className="fixed bottom-0 left-0 lg:left-[288px] right-0 bg-white border-t border-border p-4 px-6 md:px-8 flex justify-between items-center z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <div className="hidden sm:block">
+            {isDirty ? (
+              <span className="text-xs font-medium text-status-warning-text bg-status-warning-bg px-2.5 py-1 rounded-full">
+                Unsaved changes
+              </span>
+            ) : (
+              <span className="text-xs font-medium text-text-muted">No changes made</span>
+            )}
+          </div>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => navigate(`/admin/employees/${id}`)} className="w-full sm:w-32">Cancel</Button>
+            <Button type="submit" loading={saving} icon={Save} disabled={!isDirty} className="w-full sm:w-auto px-6">
+              Save Changes
+            </Button>
+          </div>
         </div>
       </form>
     </div>
   );
 };
 
-export default AddEmployee;
+export default EditEmployee;

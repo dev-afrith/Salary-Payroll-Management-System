@@ -43,7 +43,7 @@ async function setupDatabase() {
 
   console.log('\n🎉 Database setup complete!');
   console.log('─────────────────────────────────');
-  console.log('👤 Admin    : admin@payrollpro.com / Admin@123');
+  console.log('👤 Admin    : admin@astraxtech.com / Admin@123');
   console.log('👥 Employee : EMP001 / Emp@123');
   console.log('👥 Employee : EMP002 / Emp@123');
   console.log('👥 Employee : EMP003 / Emp@123');

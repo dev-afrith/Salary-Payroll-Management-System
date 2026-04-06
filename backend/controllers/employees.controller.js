@@ -142,36 +142,71 @@ const createEmployee = async (req, res) => {
 
 // Update employee
 const updateEmployee = async (req, res) => {
+  const connection = await db.getConnection();
   try {
+    await connection.beginTransaction();
     const { id } = req.params;
     const updateData = req.body;
-    
-    // Clean data for update
+
+    // Verify employee exists
+    const [existing] = await connection.query('SELECT employee_id, email FROM employees WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      connection.release();
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    const empCode = existing[0].employee_id;
+    const oldEmail = existing[0].email;
+
+    // Allowed fields for employees table
     const allowedFields = [
-      'full_name', 'phone', 'gender', 'date_of_birth', 'date_of_joining',
+      'full_name', 'email', 'phone', 'gender', 'date_of_birth', 'date_of_joining',
       'department_id', 'designation_id', 'employment_type',
       'bank_account_number', 'ifsc_code', 'pan_number', 'pf_number', 'uan_number'
     ];
-    
-    let query = 'UPDATE employees SET ';
-    let params = [];
-    Object.keys(updateData).forEach((key, index) => {
-      if (allowedFields.includes(key)) {
-        query += `${key} = ?${index === allowedFields.length - 1 ? '' : ', '}`;
+
+    // Build dynamic SET clause
+    const setClauses = [];
+    const params = [];
+    for (const key of allowedFields) {
+      if (updateData[key] !== undefined) {
+        setClauses.push(`${key} = ?`);
         params.push(updateData[key]);
       }
-    });
+    }
 
-    // Remove trailing comma if any
-    query = query.replace(/,\s*$/, '');
-    query += ' WHERE id = ?';
-    params.push(id);
+    if (setClauses.length > 0) {
+      const query = `UPDATE employees SET ${setClauses.join(', ')} WHERE id = ?`;
+      params.push(id);
+      await connection.query(query, params);
+    }
 
-    await db.query(query, params);
+    // Sync email change to users table
+    if (updateData.email && updateData.email !== oldEmail) {
+      await connection.query('UPDATE users SET email = ? WHERE employee_id = ?', [updateData.email, empCode]);
+    }
+
+    // Sync basic_pay change to salary_structure table
+    if (updateData.basic_pay !== undefined) {
+      const [salaryExists] = await connection.query('SELECT id FROM salary_structure WHERE employee_id = ?', [id]);
+      if (salaryExists.length > 0) {
+        await connection.query('UPDATE salary_structure SET basic_pay = ? WHERE employee_id = ?', [updateData.basic_pay, id]);
+      } else {
+        await connection.query('INSERT INTO salary_structure (employee_id, basic_pay) VALUES (?, ?)', [id, updateData.basic_pay]);
+      }
+    }
+
+    await connection.commit();
     res.json({ message: 'Employee updated successfully' });
   } catch (error) {
+    await connection.rollback();
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'Email already exists for another employee' });
+    }
     console.error('Error updating employee:', error);
     res.status(500).json({ message: 'Error updating employee' });
+  } finally {
+    connection.release();
   }
 };
 

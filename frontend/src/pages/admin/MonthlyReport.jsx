@@ -39,7 +39,7 @@ const MonthlyReport = () => {
 
   useEffect(() => {
     fetchData();
-    document.title = 'Financial Reports | PayrollPro';
+    document.title = 'Financial Reports | AstraX Technologies';
   }, [month, year]);
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];

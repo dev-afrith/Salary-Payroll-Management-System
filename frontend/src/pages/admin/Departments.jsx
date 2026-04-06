@@ -40,7 +40,7 @@ const Departments = () => {
 
   useEffect(() => {
     fetchDepartments();
-    document.title = 'Departments | PayrollPro';
+    document.title = 'Departments | AstraX Technologies';
   }, []);
 
   useEffect(() => {

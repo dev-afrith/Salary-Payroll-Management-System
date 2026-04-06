@@ -32,7 +32,7 @@ const BulkPayslips = () => {
 
   useEffect(() => {
     fetchRecords();
-    document.title = 'Bulk Payslips | PayrollPro';
+    document.title = 'Bulk Payslips | AstraX Technologies';
   }, [month, year]);
 
   const handleDownload = async (record) => {

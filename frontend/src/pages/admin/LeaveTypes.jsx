@@ -28,7 +28,7 @@ const LeaveTypes = () => {
 
   useEffect(() => {
     fetchTypes();
-    document.title = 'Leave Types | PayrollPro';
+    document.title = 'Leave Types | AstraX Technologies';
   }, []);
 
   const handleSave = async (e) => {

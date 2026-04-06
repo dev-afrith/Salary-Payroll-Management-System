@@ -54,7 +54,7 @@ const AdminLayout = () => {
           
           {/* Footer */}
           <footer className="mt-12 pt-8 border-t border-gray-200 text-center text-[13px] text-gray-400 pb-8">
-            © 2026 PAYROLLPRO • ENTERPRISE SALARY MANAGEMENT SYSTEM
+            © 2026 ASTRAX TECHNOLOGIES • ENTERPRISE SALARY MANAGEMENT SYSTEM
           </footer>
         </main>
       </div>

@@ -27,7 +27,7 @@ const AttendanceSettings = () => {
 
   useEffect(() => {
     fetchHistory();
-    document.title = 'Attendance Settings | PayrollPro';
+    document.title = 'Attendance Settings | AstraX Technologies';
   }, []);
 
   const handleSave = async (e) => {

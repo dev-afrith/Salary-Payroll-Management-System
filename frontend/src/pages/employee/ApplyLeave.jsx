@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Send, ArrowLeft, AlertTriangle, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import API from '../../utils/axios';
 
@@ -11,6 +11,7 @@ import Select from '../../components/ui/Select';
 const ApplyLeave = () => {
   const navigate = useNavigate();
   const [types, setTypes] = useState([]);
+  const [balances, setBalances] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
   // Form State
@@ -23,17 +24,21 @@ const ApplyLeave = () => {
   const [totalDays, setTotalDays] = useState(0);
 
   useEffect(() => {
-    const fetchTypes = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await API.get('/leaves/types');
-        setTypes(data);
-        if (data.length > 0) setTypeId(data[0].id.toString());
+        const [typesRes, balancesRes] = await Promise.all([
+          API.get('/leaves/types'),
+          API.get(`/leaves/balance/my?year=${new Date().getFullYear()}`)
+        ]);
+        setTypes(typesRes.data);
+        setBalances(balancesRes.data);
+        if (typesRes.data.length > 0) setTypeId(typesRes.data[0].id.toString());
       } catch (error) {
-        toast.error('Failed to load leave types');
+        toast.error('Failed to load leave data');
       }
     };
-    fetchTypes();
-    document.title = 'Apply Leave | PayrollPro';
+    fetchData();
+    document.title = 'Apply Leave | AstraX Technologies';
   }, []);
 
   // Calculate days difference
@@ -97,6 +102,23 @@ const ApplyLeave = () => {
             options={types.map(t => ({ value: t.id, label: t.name }))} 
             required
           />
+
+          {(() => {
+            const selectedBalance = balances.find(b => b.leave_type_id.toString() === typeId);
+            if (!selectedBalance) return null;
+            return (
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-5 flex items-center justify-between shadow-inner">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Available Balance</p>
+                  <p className="text-sm font-medium text-slate-600">Total Allocated: <strong className="text-slate-900">{selectedBalance.allocated}</strong></p>
+                </div>
+                <div className="text-right flex items-baseline gap-1.5 bg-white px-4 py-2 rounded-lg border border-slate-200/60 shadow-sm">
+                  <span className={`text-3xl font-black ${Number(selectedBalance.remaining) > 0 ? 'text-green-600' : 'text-red-500'} tracking-tight`}>{selectedBalance.remaining}</span>
+                  <span className="text-sm font-bold text-slate-400">days left</span>
+                </div>
+              </div>
+            );
+          })()}
 
           <div className="grid grid-cols-2 gap-4">
             <Input 
