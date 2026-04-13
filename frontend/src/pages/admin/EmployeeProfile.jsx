@@ -162,7 +162,7 @@ const EmployeeProfile = () => {
                   <DetailItem label="Phone Number" value={employee.phone} />
                   <DetailItem label="Gender" value={employee.gender} />
                   <DetailItem label="Date of Birth" value={formatDate(employee.date_of_birth)} />
-                  <DetailItem label="Address" value="CIT Campus, Gubbi, Karnataka" />
+                  <DetailItem label="Address" value={employee.address} />
                 </div>
               )}
 

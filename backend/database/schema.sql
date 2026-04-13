@@ -1,21 +1,9 @@
 CREATE DATABASE IF NOT EXISTS payroll_db;
 USE payroll_db;
 
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  employee_id VARCHAR(20) UNIQUE,
-  email VARCHAR(100) UNIQUE,
-  password VARCHAR(255) NOT NULL,
-  role ENUM('admin', 'employee') NOT NULL DEFAULT 'employee',
-  is_active BOOLEAN DEFAULT TRUE,
-  last_login TIMESTAMP NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
 CREATE TABLE company_settings (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  company_name VARCHAR(150) NOT NULL DEFAULT 'PayrollPro Inc.',
+  company_name VARCHAR(150) NOT NULL DEFAULT 'AstraX Technologies',
   company_address TEXT,
   company_email VARCHAR(100),
   company_phone VARCHAR(20),
@@ -50,20 +38,40 @@ CREATE TABLE employees (
   gender ENUM('Male','Female','Other'),
   date_of_birth DATE,
   date_of_joining DATE,
+  address TEXT,
   department_id INT,
   designation_id INT,
   employment_type ENUM('Full-time','Part-time','Contract') DEFAULT 'Full-time',
-  bank_account_number VARCHAR(30),
-  ifsc_code VARCHAR(20),
-  pan_number VARCHAR(15),
-  pf_number VARCHAR(20),
-  uan_number VARCHAR(20),
   profile_photo_url VARCHAR(255),
   status ENUM('Pending','Approved','Rejected') DEFAULT 'Pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
   FOREIGN KEY (designation_id) REFERENCES designations(id) ON DELETE SET NULL
+);
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  employee_id VARCHAR(20) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role ENUM('admin', 'employee') NOT NULL DEFAULT 'employee',
+  is_active BOOLEAN DEFAULT TRUE,
+  last_login TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (employee_id) REFERENCES employees(employee_id) ON DELETE CASCADE
+);
+
+CREATE TABLE employee_finance (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  employee_id INT UNIQUE NOT NULL,
+  bank_account_number VARCHAR(30),
+  ifsc_code VARCHAR(20),
+  pan_number VARCHAR(15),
+  pf_number VARCHAR(20),
+  uan_number VARCHAR(20),
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
 );
 
 CREATE TABLE salary_structure (
@@ -165,4 +173,27 @@ CREATE TABLE payroll (
   processed_at TIMESTAMP NULL,
   UNIQUE KEY unique_payroll (employee_id, month, year),
   FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+);
+
+CREATE TABLE password_reset_requests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  employee_code VARCHAR(20) NOT NULL,
+  employee_db_id INT NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (employee_db_id) REFERENCES employees(id) ON DELETE CASCADE
+);
+
+CREATE TABLE messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sender_id INT NOT NULL,
+  sender_role ENUM('admin', 'employee') NOT NULL,
+  receiver_id INT, -- NULL for public broadcast
+  receiver_role ENUM('admin', 'employee'),
+  encrypted_content TEXT NOT NULL,
+  iv VARCHAR(255) NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -11,8 +11,9 @@ const adminLogin = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
+    // Normalized: Join with employees to verify email
     const [users] = await db.query(
-      'SELECT * FROM users WHERE email = ? AND role = ?',
+      'SELECT u.*, e.email FROM users u JOIN employees e ON u.employee_id = e.employee_id WHERE e.email = ? AND u.role = ?',
       [email, 'admin']
     );
 
@@ -64,8 +65,9 @@ const employeeLogin = async (req, res) => {
       return res.status(400).json({ message: 'Employee ID and password are required.' });
     }
 
+    // Normalized: Join with employees for full context
     const [users] = await db.query(
-      'SELECT u.*, e.id as employee_db_id, e.full_name, e.department_id, e.designation_id, e.employee_id as emp_code FROM users u JOIN employees e ON u.employee_id = e.employee_id WHERE u.employee_id = ? AND u.role = ?',
+      'SELECT u.*, e.id as employee_db_id, e.full_name, e.email, e.department_id, e.designation_id, e.employee_id as emp_code FROM users u JOIN employees e ON u.employee_id = e.employee_id WHERE u.employee_id = ? AND u.role = ?',
       [employee_id, 'employee']
     );
 
@@ -88,7 +90,13 @@ const employeeLogin = async (req, res) => {
     await db.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
 
     const token = jwt.sign(
-      { id: user.id, role: user.role, employee_id: user.emp_code, employee_db_id: user.employee_db_id, email: user.email },
+      { 
+        id: user.id, 
+        role: user.role, 
+        employee_id: user.emp_code, 
+        employee_db_id: user.employee_db_id, 
+        email: user.email 
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
     );
@@ -114,7 +122,11 @@ const employeeLogin = async (req, res) => {
 // Get current user
 const getMe = async (req, res) => {
   try {
-    const [users] = await db.query('SELECT id, employee_id, email, role, is_active, last_login FROM users WHERE id = ?', [req.user.id]);
+    // Normalized: Fetch email from employees table
+    const [users] = await db.query(
+      'SELECT u.id, u.employee_id, u.role, u.is_active, u.last_login, e.email FROM users u JOIN employees e ON u.employee_id = e.employee_id WHERE u.id = ?', 
+      [req.user.id]
+    );
 
     if (users.length === 0) {
       return res.status(404).json({ message: 'User not found.' });
@@ -148,12 +160,12 @@ const getMe = async (req, res) => {
   }
 };
 
-// Logout (client-side token removal, but we acknowledge)
+// Logout
 const logout = async (req, res) => {
   res.json({ message: 'Logged out successfully.' });
 };
 
-// Forgot Password - Employee submits request (PUBLIC)
+// Forgot Password
 const forgotPassword = async (req, res) => {
   try {
     const { employee_id, phone } = req.body;
@@ -197,7 +209,7 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// Get all password reset requests (ADMIN)
+// Get Reset Requests
 const getResetRequests = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -213,14 +225,14 @@ const getResetRequests = async (req, res) => {
   }
 };
 
-// Approve reset request (ADMIN sets new password)
+// Approve Reset Request
 const approveResetRequest = async (req, res) => {
   try {
     const { id } = req.params;
     const { new_password } = req.body;
 
-    if (!new_password || new_password.length < 4) {
-      return res.status(400).json({ message: 'New password must be at least 4 characters.' });
+    if (!new_password || new_password.length < 8) {
+      return res.status(400).json({ message: 'New password must be at least 8 characters long.' });
     }
 
     // Get the request
@@ -254,7 +266,7 @@ const approveResetRequest = async (req, res) => {
   }
 };
 
-// Reject reset request (ADMIN)
+// Reject Reset Request
 const rejectResetRequest = async (req, res) => {
   try {
     const { id } = req.params;

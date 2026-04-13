@@ -5,14 +5,30 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
-    methods: ['GET', 'POST']
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173', 'http://localhost:5174'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  }
+});
+
+// ─── Socket.io Security Middleware ────────────────────
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) return next(new Error('Authentication error: Token missing'));
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = decoded;
+    next();
+  } catch (err) {
+    return next(new Error('Authentication error: Invalid token'));
   }
 });
 
@@ -20,11 +36,15 @@ const io = new Server(server, {
 const { saveMessage } = require('./controllers/communication.controller');
 
 io.on('connection', (socket) => {
-  // Join their own room for private messages
-  socket.on('join_own_room', (data) => {
-    // data should contain { id, role }
-    socket.join(`${data.role}_${data.id}`);
-  });
+  // Use verified identity from JWT
+  // For employees, we use their database ID (employees.id) for rooms
+  // For admins, we use their users.id
+  const entityId = socket.user.role === 'employee' ? socket.user.employee_db_id : socket.user.id;
+  const { role } = socket.user;
+  
+  // Join their own room for private messages automatically
+  socket.join(`${role}_${entityId}`);
+  console.log(`📡 Socket connected & secured: ${role}_${entityId}`);
 
   // Client joining a specific direct chat room or public broadcast
   socket.on('send_message', async (data) => {
@@ -60,17 +80,25 @@ io.on('connection', (socket) => {
 });
 
 
-// ─── Middleware ───────────────────────────────────────
+// ─── Global Middleware ────────────────────────────────
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: true, // Allow all for development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate Limiting disabled for development
+/*
+const apiLimiter = rateLimit({ ... });
+...
+app.use('/api', apiLimiter);
+*/
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

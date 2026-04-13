@@ -102,8 +102,8 @@ const processPayroll = async (req, res) => {
       const tds = calcTDS(grossSalary * 12);
       const lopDeduction = workingDays > 0 && lopDays > 0 ? (grossSalary / workingDays) * lopDays : 0;
 
-      const totalDeductions = pfEmployee + esiEmployee + professionalTax + tds + lopDeduction;
-      const netSalary = grossSalary - totalDeductions;
+      const total_deductions = pfEmployee + esiEmployee + professionalTax + tds + lopDeduction;
+      const netSalary = grossSalary - total_deductions;
 
       // 5. Upsert payroll record
       if (existing.length > 0) {
@@ -117,7 +117,7 @@ const processPayroll = async (req, res) => {
           [workingDays, presentDays, lopDays, overtimeHours,
            basicPay, hra, da, specialAllowance, overtimePay, bonus,
            grossSalary, pfEmployee, esiEmployee, professionalTax, tds,
-           lopDeduction, totalDeductions, netSalary, existing[0].id]
+           lopDeduction, total_deductions, netSalary, existing[0].id]
         );
       } else {
         await db.query(
@@ -130,7 +130,7 @@ const processPayroll = async (req, res) => {
           [emp.id, month, year, workingDays, presentDays, lopDays, overtimeHours,
            basicPay, hra, da, specialAllowance, overtimePay, bonus,
            grossSalary, pfEmployee, esiEmployee, professionalTax, tds,
-           lopDeduction, totalDeductions, netSalary]
+           lopDeduction, total_deductions, netSalary]
         );
       }
       processedCount++;
@@ -191,11 +191,12 @@ const getEmployeePayroll = async (req, res) => {
     const { month, year } = req.query;
 
     const [rows] = await db.query(
-      `SELECT p.*, e.full_name, e.employee_id as emp_code, e.email, e.pan_number, e.pf_number, e.uan_number,
-              e.bank_account_number, e.ifsc_code,
+      `SELECT p.*, e.full_name, e.employee_id as emp_code, e.email, 
+              ef.pan_number, ef.pf_number, ef.uan_number, ef.bank_account_number, ef.ifsc_code,
               d.name as department_name, des.name as designation_name
        FROM payroll p
        JOIN employees e ON p.employee_id = e.id
+       LEFT JOIN employee_finance ef ON e.id = ef.employee_id
        LEFT JOIN departments d ON e.department_id = d.id
        LEFT JOIN designations des ON e.designation_id = des.id
        WHERE p.employee_id = ? AND p.month = ? AND p.year = ?`,
@@ -218,7 +219,7 @@ const getEmployeePayroll = async (req, res) => {
   }
 };
 
-// Lock payroll for a month (prevents re-processing)
+// Lock payroll for a month
 const lockPayroll = async (req, res) => {
   try {
     const { month, year } = req.body;

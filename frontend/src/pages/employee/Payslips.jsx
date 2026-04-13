@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Table as TableIcon, Filter } from 'lucide-react';
+import { Download, Table as TableIcon, Filter, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import API from '../../utils/axios';
-import { generatePayslipPDF } from '../../utils/pdfGenerator';
+import { generatePayslipPDF, previewPayslipPDF } from '../../utils/pdfGenerator';
 import { formatINR } from '../../utils/formatCurrency';
 
 import Button from '../../components/ui/Button';
@@ -34,12 +34,16 @@ const EmployeePayslips = () => {
     document.title = 'My Payslips | AstraX Technologies';
   }, [year]);
 
-  const handleDownload = async (p) => {
+  const handleAction = async (p, actionType) => {
     try {
       const { data } = await API.get(`/payroll/employee/${p.employee_id}?month=${p.month}&year=${p.year}`);
-      generatePayslipPDF(data);
+      if (actionType === 'download') {
+        generatePayslipPDF(data);
+      } else {
+        previewPayslipPDF(data);
+      }
     } catch (error) {
-      toast.error('Failed to generate PDF');
+      toast.error(`Failed to ${actionType} PDF`);
     }
   };
 
@@ -73,7 +77,7 @@ const EmployeePayslips = () => {
                   <th className="px-6 py-4 font-semibold">Month / Year</th>
                   <th className="px-6 py-4 font-semibold text-right">Net Salary</th>
                   <th className="px-6 py-4 font-semibold text-center">Status</th>
-                  <th className="px-6 py-4 font-semibold text-center">Action</th>
+                  <th className="px-6 py-4 font-semibold text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -87,20 +91,30 @@ const EmployeePayslips = () => {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full ${
-                        p.status === 'Locked' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'
+                         p.status === 'Locked' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'
                       }`}>
                         {p.status === 'Locked' ? 'Released' : p.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center w-[120px]">
-                      <button 
-                        onClick={() => handleDownload(p)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        title="Download PDF"
-                        disabled={p.status !== 'Locked'}
-                      >
-                        <Download size={20} className={p.status !== 'Locked' ? 'opacity-30' : ''} />
-                      </button>
+                    <td className="px-6 py-4 text-center w-[160px]">
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => handleAction(p, 'view')}
+                          className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                          title="View PDF"
+                          disabled={p.status !== 'Locked'}
+                        >
+                          <Eye size={20} className={p.status !== 'Locked' ? 'opacity-30' : ''} />
+                        </button>
+                        <button 
+                          onClick={() => handleAction(p, 'download')}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Download PDF"
+                          disabled={p.status !== 'Locked'}
+                        >
+                          <Download size={20} className={p.status !== 'Locked' ? 'opacity-30' : ''} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

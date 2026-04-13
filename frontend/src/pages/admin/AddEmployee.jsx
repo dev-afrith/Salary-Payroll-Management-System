@@ -131,6 +131,14 @@ const AddEmployee = () => {
                   <option value="Other">Other</option>
                 </select>
               </div>
+              <div className="md:col-span-2 w-full">
+                <label className={labelClass}>Residential Address</label>
+                <textarea 
+                  className={selectClass + " min-h-[80px] py-3"}
+                  placeholder="Street name, City, State, ZIP..."
+                  {...register('address')}
+                />
+              </div>
             </div>
           </div>
 

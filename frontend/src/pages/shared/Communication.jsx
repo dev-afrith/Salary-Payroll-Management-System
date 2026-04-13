@@ -22,8 +22,8 @@ const Communication = () => {
 
   useEffect(() => {
     // Socket setup
+    socket.auth.token = localStorage.getItem('payroll_token');
     socket.connect();
-    socket.emit('join_own_room', { id: myId, role: myRole });
 
     const handleMessagesRead = (data) => {
       // data = { readerId, readerRole }

@@ -1,5 +1,5 @@
 /**
- * Employee Controller - Module 2
+ * Employee Controller - Module 2 (3NF Normalized)
  */
 const bcrypt = require('bcryptjs');
 const db = require('../config/db');
@@ -11,8 +11,10 @@ const getEmployees = async (req, res) => {
     const offset = (page - 1) * limit;
 
     let query = `
-      SELECT e.*, d.name as department_name, des.name as designation_name 
+      SELECT e.*, d.name as department_name, des.name as designation_name,
+             ef.bank_account_number, ef.ifsc_code, ef.pan_number, ef.pf_number, ef.uan_number
       FROM employees e
+      LEFT JOIN employee_finance ef ON e.id = ef.employee_id
       LEFT JOIN departments d ON e.department_id = d.id
       LEFT JOIN designations des ON e.designation_id = des.id
       WHERE 1=1
@@ -61,8 +63,10 @@ const getEmployeeById = async (req, res) => {
     const { id } = req.params;
     const [rows] = await db.query(`
       SELECT e.*, d.name as department_name, des.name as designation_name,
+             ef.bank_account_number, ef.ifsc_code, ef.pan_number, ef.pf_number, ef.uan_number,
              s.basic_pay, s.hra_percent, s.da_amount, s.special_allowance, s.overtime_rate
       FROM employees e
+      LEFT JOIN employee_finance ef ON e.id = ef.employee_id
       LEFT JOIN departments d ON e.department_id = d.id
       LEFT JOIN designations des ON e.designation_id = des.id
       LEFT JOIN salary_structure s ON e.id = s.employee_id
@@ -84,7 +88,7 @@ const createEmployee = async (req, res) => {
     await connection.beginTransaction();
 
     const {
-      full_name, email, phone, gender, date_of_birth, date_of_joining,
+      full_name, email, phone, gender, date_of_birth, date_of_joining, address,
       department_id, designation_id, employment_type,
       bank_account_number, ifsc_code, pan_number, pf_number, uan_number,
       basic_pay, password // Admin sets initial password
@@ -98,33 +102,38 @@ const createEmployee = async (req, res) => {
       nextId = 'EMP' + num.toString().padStart(3, '0');
     }
 
-    // 1. Insert into employees
+    // 1. Insert into employees (Identity)
     const [empResult] = await connection.query(`
       INSERT INTO employees (
-        employee_id, full_name, email, phone, gender, date_of_birth, date_of_joining,
-        department_id, designation_id, employment_type, bank_account_number, ifsc_code,
-        pan_number, pf_number, uan_number, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+        employee_id, full_name, email, phone, gender, date_of_birth, date_of_joining, address,
+        department_id, designation_id, employment_type, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
     `, [
-      nextId, full_name, email, phone, gender, date_of_birth, date_of_joining,
-      department_id, designation_id, employment_type, bank_account_number, ifsc_code,
-      pan_number, pf_number, uan_number
+      nextId, full_name, email, phone, gender, date_of_birth, date_of_joining, address,
+      department_id, designation_id, employment_type
     ]);
 
-    const employeeId = empResult.insertId;
+    const employeeDbId = empResult.insertId;
 
-    // 2. Insert into users (Auth)
+    // 2. Insert into employee_finance (Sensitive Data)
+    await connection.query(`
+      INSERT INTO employee_finance (
+        employee_id, bank_account_number, ifsc_code, pan_number, pf_number, uan_number
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `, [employeeDbId, bank_account_number, ifsc_code, pan_number, pf_number, uan_number]);
+
+    // 3. Insert into users (Auth)
     const hashedPassword = await bcrypt.hash(password || 'Emp@123', 10);
     await connection.query(`
-      INSERT INTO users (employee_id, email, password, role, is_active)
-      VALUES (?, ?, ?, 'employee', FALSE)
-    `, [nextId, email, hashedPassword]);
+      INSERT INTO users (employee_id, password, role, is_active)
+      VALUES (?, ?, 'employee', FALSE)
+    `, [nextId, hashedPassword]);
 
-    // 3. Insert into salary_structure
+    // 4. Insert into salary_structure
     await connection.query(`
       INSERT INTO salary_structure (employee_id, basic_pay)
       VALUES (?, ?)
-    `, [employeeId, basic_pay || 0]);
+    `, [employeeDbId, basic_pay || 0]);
 
     await connection.commit();
     res.status(201).json({ message: 'Employee registered successfully', employee_id: nextId });
@@ -149,51 +158,48 @@ const updateEmployee = async (req, res) => {
     const updateData = req.body;
 
     // Verify employee exists
-    const [existing] = await connection.query('SELECT employee_id, email FROM employees WHERE id = ?', [id]);
+    const [existing] = await connection.query('SELECT employee_id FROM employees WHERE id = ?', [id]);
     if (existing.length === 0) {
       connection.release();
       return res.status(404).json({ message: 'Employee not found' });
     }
 
-    const empCode = existing[0].employee_id;
-    const oldEmail = existing[0].email;
-
-    // Allowed fields for employees table
-    const allowedFields = [
+    // 1. Update Core Employee Identity
+    const coreFields = [
       'full_name', 'email', 'phone', 'gender', 'date_of_birth', 'date_of_joining',
-      'department_id', 'designation_id', 'employment_type',
-      'bank_account_number', 'ifsc_code', 'pan_number', 'pf_number', 'uan_number'
+      'department_id', 'designation_id', 'employment_type', 'address'
     ];
-
-    // Build dynamic SET clause
-    const setClauses = [];
-    const params = [];
-    for (const key of allowedFields) {
+    const coreClauses = [];
+    const coreParams = [];
+    for (const key of coreFields) {
       if (updateData[key] !== undefined) {
-        setClauses.push(`${key} = ?`);
-        params.push(updateData[key]);
+        coreClauses.push(`${key} = ?`);
+        coreParams.push(updateData[key]);
       }
     }
-
-    if (setClauses.length > 0) {
-      const query = `UPDATE employees SET ${setClauses.join(', ')} WHERE id = ?`;
-      params.push(id);
-      await connection.query(query, params);
+    if (coreClauses.length > 0) {
+      coreParams.push(id);
+      await connection.query(`UPDATE employees SET ${coreClauses.join(', ')} WHERE id = ?`, coreParams);
     }
 
-    // Sync email change to users table
-    if (updateData.email && updateData.email !== oldEmail) {
-      await connection.query('UPDATE users SET email = ? WHERE employee_id = ?', [updateData.email, empCode]);
+    // 2. Update Financial Details
+    const financeFields = ['bank_account_number', 'ifsc_code', 'pan_number', 'pf_number', 'uan_number'];
+    const financeClauses = [];
+    const financeParams = [];
+    for (const key of financeFields) {
+      if (updateData[key] !== undefined) {
+        financeClauses.push(`${key} = ?`);
+        financeParams.push(updateData[key]);
+      }
+    }
+    if (financeClauses.length > 0) {
+      financeParams.push(id);
+      await connection.query(`UPDATE employee_finance SET ${financeClauses.join(', ')} WHERE employee_id = ?`, financeParams);
     }
 
-    // Sync basic_pay change to salary_structure table
+    // 3. Update Salary Structure
     if (updateData.basic_pay !== undefined) {
-      const [salaryExists] = await connection.query('SELECT id FROM salary_structure WHERE employee_id = ?', [id]);
-      if (salaryExists.length > 0) {
-        await connection.query('UPDATE salary_structure SET basic_pay = ? WHERE employee_id = ?', [updateData.basic_pay, id]);
-      } else {
-        await connection.query('INSERT INTO salary_structure (employee_id, basic_pay) VALUES (?, ?)', [id, updateData.basic_pay]);
-      }
+      await connection.query('UPDATE salary_structure SET basic_pay = ? WHERE employee_id = ?', [updateData.basic_pay, id]);
     }
 
     await connection.commit();
@@ -262,7 +268,7 @@ const deleteEmployee = async (req, res) => {
 
     const empCode = employees[0].employee_id;
 
-    // Delete from users, salary_structure, then employees
+    // Cascading deletes handled by DB but we manually clean users for clarity
     await connection.query('DELETE FROM users WHERE employee_id = ?', [empCode]);
     await connection.query('DELETE FROM employees WHERE id = ?', [id]);
 

@@ -65,6 +65,7 @@ const EditEmployee = () => {
           pan_number: emp.pan_number || '',
           pf_number: emp.pf_number || '',
           uan_number: emp.uan_number || '',
+          address: emp.address || '',
         });
       } catch (error) {
         toast.error('Failed to load employee details');
@@ -213,6 +214,14 @@ const EditEmployee = () => {
                   <option value="Other">Other</option>
                 </select>
               </div>
+              <div className="md:col-span-2 w-full">
+                <label className={labelClass}>Residential Address</label>
+                <textarea 
+                  className={selectClass + " min-h-[80px] py-3"}
+                  placeholder="Street name, City, State, ZIP..."
+                  {...register('address')}
+                />
+              </div>
             </div>
           </div>
 
@@ -293,9 +302,8 @@ const EditEmployee = () => {
           <div className="bg-surface-card border border-border rounded-card p-6 shadow-enterprise mb-8">
             <div className="bg-surface p-4 rounded-card border border-border flex flex-col justify-center">
               <p className="text-xs font-medium text-text-secondary leading-relaxed">
-                <span className="font-semibold text-text-primary flex items-center gap-1.5 mb-1"><Info size={14} className="text-primary"/> Edit Note</span>
-                Changes to <span className="font-semibold">email address</span> will automatically sync to the login credentials. 
-                The employee's <span className="font-semibold">Employee ID</span> and <span className="font-semibold">status</span> cannot be modified from this form.
+                <span className="font-semibold text-text-primary flex items-center gap-1.5 mb-1"><Info size={14} className="text-primary"/> Database Integrity</span>
+                This form uses <span className="font-semibold text-primary">3NF Architecture</span>. Changes to email are automatically updated across identity and authentication tables securely.
               </p>
             </div>
           </div>

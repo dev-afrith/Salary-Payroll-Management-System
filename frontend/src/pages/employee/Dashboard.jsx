@@ -4,6 +4,8 @@ import { DollarSign, CalendarDays, Palmtree, BarChart3, AlertTriangle } from 'lu
 import { getGreeting, getTodayFormatted, getCurrentMonthYear } from '../../utils/dateHelpers';
 import { formatINR } from '../../utils/formatCurrency';
 import API from '../../utils/axios';
+import Modal from '../../components/ui/Modal';
+import Button from '../../components/ui/Button';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -12,11 +14,23 @@ const Dashboard = () => {
   const [netSalary, setNetSalary] = useState(null);
   const [attendancePct, setAttendancePct] = useState(null);
   const [pendingLeaves, setPendingLeaves] = useState(0);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
   useEffect(() => {
     document.title = 'My Dashboard | AstraX Technologies';
     fetchAll();
+    checkAttendance();
   }, []);
+
+  const checkAttendance = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await API.get(`/attendance/my?date=${today}`);
+      if (!data || data.length === 0) {
+        setShowAttendanceModal(true);
+      }
+    } catch {}
+  };
 
   const fetchAll = async () => {
     setLoading(true);
@@ -145,6 +159,24 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={showAttendanceModal}
+        onClose={() => setShowAttendanceModal(false)}
+        title="Welcome Back!"
+      >
+        <div className="text-center py-4">
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CalendarDays size={32} />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Mark Your Attendance</h3>
+          <p className="text-gray-500 mb-6">You haven't marked your attendance for today yet. Would you like to do it now?</p>
+          <div className="flex gap-3 justify-center">
+            <Button variant="secondary" onClick={() => setShowAttendanceModal(false)}>Later</Button>
+            <Button variant="primary" onClick={() => (window.location.href = '/attendance')}>Mark Now</Button>
+          </div>
+        </div>
+      </Modal>
     </section>
   );
 };
